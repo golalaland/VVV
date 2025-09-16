@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profiles with Video Cycling</title>
+  <title>Profiles Video Carousel</title>
   <style>
-    /* === Wrapper & Layout === */
+    /* Wrapper */
     #profile-wrapper {
       text-align: center;
       max-width: 360px;
@@ -18,14 +18,12 @@
       font-family: 'Helvetica Neue', Arial, sans-serif;
     }
 
-    /* === Profile Blocks === */
     .profile { display: none; }
     .profile.active { display: block; }
 
-    /* === Video Slider === */
+    /* Video slider */
     .video-slider {
       position: relative;
-      width: 100%;
       margin-bottom: 12px;
     }
     .video-slider video {
@@ -34,18 +32,17 @@
       max-width: 340px;
       margin: 0 auto;
       border-radius: 14px;
-      background: #000;
       aspect-ratio: 9/16;
       object-fit: contain;
+      background: #000;
     }
     .video-slider video.active { display: block; }
 
-    /* === Video Controls === */
+    /* Video nav */
     .video-controls {
       position: absolute;
       top: 50%;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
       display: flex;
       justify-content: space-between;
       transform: translateY(-50%);
@@ -61,64 +58,40 @@
       padding: 6px 10px;
       border-radius: 50%;
       cursor: pointer;
-      transition: background 0.3s;
-    }
-    .video-controls button:hover {
-      background: rgba(255,255,255,0.3);
     }
 
-    /* === Bio Cards === */
+    /* Bio card */
     .bio-card {
       background: #000;
-      color: #fff;
       border-radius: 14px;
       padding: 12px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
       margin-bottom: 10px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
     }
-    .profile.active .bio-card { opacity: 1; transform: translateY(0); }
+    .bio-name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+    .bio-info { font-size: 14px; color: #aaa; margin: 2px 0; }
+    .bio-info span { color: #fff; font-weight: 600; }
 
-    .bio-name { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
-    .bio-info { font-size: 14px; line-height: 1.4; color: #aaa; margin-bottom: 2px; }
-    .bio-info span { font-weight: 600; color: #fff; }
-
-    /* === Nav Buttons === */
+    /* Profile navigation */
     .nav-buttons {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-top: 8px;
       gap: 10px;
     }
-    .nav-buttons button, .meet-btn {
+    .nav-buttons button {
+      flex: 1;
       padding: 6px 18px;
       border-radius: 800px;
       font-weight: 900;
       font-size: 13px;
-      cursor: pointer;
       border: none;
+      cursor: pointer;
       background: #DFF41F;
       color: #000;
-      transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
-      flex: 1;
+      transition: 0.3s;
     }
-    .nav-buttons button:hover, .meet-btn:hover {
-      transform: scale(1.08);
-      background: #c8db1c;
-      box-shadow: 0 4px 12px rgba(223, 244, 31, 0.6);
-    }
-    .meet-btn { flex: 1; max-width: 120px; margin: 0 auto; }
-
-    /* === Safari Fixes === */
-    @supports (-webkit-touch-callout: none) {
-      .video-slider video {
-        max-width: 320px !important;
-        height: auto !important;
-        object-fit: contain !important;
-      }
+    .nav-buttons button:hover {
+      transform: scale(1.05);
     }
   </style>
 </head>
@@ -127,99 +100,99 @@
     <div id="profiles-container"></div>
     <div class="nav-buttons">
       <button id="prev-btn">Prev</button>
-      <button class="meet-btn">Meet</button>
       <button id="next-btn">Next</button>
     </div>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const container = document.getElementById('profiles-container');
-      let allProfiles = [];
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("profiles-container");
+      let profilesData = [];
       let activeIndex = 0;
-      const API_KEY = '7dli8bleg4bq8'; // sheetdb API
 
-      fetch(`https://sheetdb.io/api/v1/${API_KEY}?limit=50`)
+      const API_KEY = "7dli8bleg4bq8"; // sheetdb API key
+
+      fetch(`https://sheetdb.io/api/v1/${API_KEY}`)
         .then(res => res.json())
-        .then(profiles => {
-          allProfiles = profiles;
-          renderProfiles(allProfiles);
+        .then(data => {
+          profilesData = data;
+          renderProfiles(data);
           showProfile(activeIndex);
         });
 
       function renderProfiles(profiles) {
         profiles.forEach(profile => {
-          const profileDiv = document.createElement('div');
-          profileDiv.classList.add('profile');
+          const profileDiv = document.createElement("div");
+          profileDiv.classList.add("profile");
 
-          // split multiple video links if comma-separated
-          const videos = profile.video_id ? profile.video_id.split(',').map(v => v.trim()) : [];
+          // split multiple videos by comma/newline
+          const videos = (profile.VideoIDs || "").split(/[\n,]+/).map(v => v.trim()).filter(Boolean);
 
-          let videoHTML = '';
+          let videoHTML = "";
           if (videos.length > 0) {
             videoHTML = `
               <div class="video-slider">
-                ${videos.map((vid, i) => `
-                  <video src="${vid}" ${i === 0 ? 'class="active"' : ''} muted playsinline controls></video>
-                `).join('')}
+                ${videos.map((vid, i) =>
+                  `<video src="${vid}" ${i===0 ? 'class="active"' : ""} autoplay muted loop playsinline></video>`
+                ).join("")}
                 ${videos.length > 1 ? `
-                  <div class="video-controls">
-                    <button class="prev">‹</button>
-                    <button class="next">›</button>
-                  </div>
-                ` : ''}
+                <div class="video-controls">
+                  <button class="prev">‹</button>
+                  <button class="next">›</button>
+                </div>` : ""}
               </div>
             `;
           }
 
           profileDiv.innerHTML = `
-            <div class="slider">${videoHTML}</div>
+            ${videoHTML}
             <div class="bio-card">
-              <div class="bio-name">${profile.name || 'Unknown'}</div>
-              <div class="bio-info"><span>Age:</span> ${profile.age || '-'}</div>
-              <div class="bio-info"><span>City:</span> ${profile.city || '-'}</div>
+              <div class="bio-name">${profile.Name || "No Name"}</div>
+              <div class="bio-info"><span>📍 Location:</span> ${profile.Location || "-"}</div>
+              <div class="bio-info"><span>🎂 Age:</span> ${profile.Age || "-"}</div>
+              <div class="bio-info"><span>💖 Orientation:</span> ${profile.Orientation || "-"}</div>
             </div>
           `;
 
           container.appendChild(profileDiv);
         });
 
-        initVideoSliders();
+        initVideoControls();
       }
 
-      function showProfile(index) {
-        const profiles = document.querySelectorAll('.profile');
-        profiles.forEach((p, i) => p.classList.toggle('active', i === index));
-      }
-
-      function initVideoSliders() {
+      function initVideoControls() {
         document.querySelectorAll(".video-slider").forEach(slider => {
-          let videos = slider.querySelectorAll("video");
+          const vids = slider.querySelectorAll("video");
           let current = 0;
+          const nextBtn = slider.querySelector(".next");
+          const prevBtn = slider.querySelector(".prev");
 
-          if (videos.length === 0) return;
-
-          slider.querySelector(".next")?.addEventListener("click", () => {
-            videos[current].classList.remove("active");
-            current = (current + 1) % videos.length;
-            videos[current].classList.add("active");
+          if (nextBtn) nextBtn.addEventListener("click", () => {
+            vids[current].classList.remove("active");
+            current = (current + 1) % vids.length;
+            vids[current].classList.add("active");
           });
 
-          slider.querySelector(".prev")?.addEventListener("click", () => {
-            videos[current].classList.remove("active");
-            current = (current - 1 + videos.length) % videos.length;
-            videos[current].classList.add("active");
+          if (prevBtn) prevBtn.addEventListener("click", () => {
+            vids[current].classList.remove("active");
+            current = (current - 1 + vids.length) % vids.length;
+            vids[current].classList.add("active");
           });
         });
       }
 
+      function showProfile(index) {
+        const profiles = document.querySelectorAll(".profile");
+        profiles.forEach((p, i) => p.classList.toggle("active", i === index));
+      }
+
       document.getElementById("prev-btn").addEventListener("click", () => {
-        activeIndex = (activeIndex - 1 + allProfiles.length) % allProfiles.length;
+        activeIndex = (activeIndex - 1 + profilesData.length) % profilesData.length;
         showProfile(activeIndex);
       });
 
       document.getElementById("next-btn").addEventListener("click", () => {
-        activeIndex = (activeIndex + 1) % allProfiles.length;
+        activeIndex = (activeIndex + 1) % profilesData.length;
         showProfile(activeIndex);
       });
     });
