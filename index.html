@@ -1,4 +1,4 @@
-<!-- Carousel Container -->
+<!-- ================== Profiles Carousel ================== -->
 <div id="profile-wrapper">
   <div id="profiles-container"></div>
   <div class="nav-buttons">
@@ -9,7 +9,7 @@
 </div>
 
 <style>
-/* Wrapper */
+/* === Wrapper & Layout === */
 #profile-wrapper {
   text-align: center;
   max-width: 380px;
@@ -22,11 +22,15 @@
   font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Profile Cards */
-.profile { display: none; border-radius: 14px; margin-bottom: 10px; }
+/* === Profile Blocks === */
+.profile {
+  display: none;
+  border-radius: 14px;
+  margin-bottom: 10px;
+}
 .profile.active { display: block; }
 
-/* Slider & Video */
+/* === Slider & Video === */
 .slider {
   position: relative;
   width: 100%;
@@ -40,7 +44,7 @@
 }
 .slides video {
   width: 100%;
-  max-width: 360px;
+  max-width: 300px;
   margin: 0 auto;
   display: block;
   aspect-ratio: 9/16;
@@ -49,23 +53,7 @@
   object-fit: contain;
 }
 
-/* Video navigation arrows */
-.video-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 24px;
-  color: #fff;
-  background: rgba(0,0,0,0.5);
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 12px;
-  user-select: none;
-}
-.video-nav.left { left: 8px; }
-.video-nav.right { right: 8px; }
-
-/* Bio Card */
+/* === Bio Cards === */
 .bio-card {
   background: #000;
   color: #fff;
@@ -77,19 +65,22 @@
   transform: translateY(20px);
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
-.profile.active .bio-card { opacity: 1; transform: translateY(0); }
+.profile.active .bio-card {
+  opacity: 1;
+  transform: translateY(0);
+}
 .bio-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
 .bio-info { font-size: 14px; line-height: 1.4; color: #aaa; margin-bottom: 2px; }
 .bio-info span { font-weight: 600; color: #fff; }
 .fruit-pick { font-size: 21px; font-weight: 700; margin: 6px 0; }
 
-/* Profile Nav Buttons */
+/* === Nav Buttons === */
 .nav-buttons {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
-  gap: 6px;
+  margin-top: 8px;
+  gap: 10px;
 }
 .nav-buttons button, .meet-btn {
   padding: 6px 18px;
@@ -110,13 +101,9 @@
 }
 .meet-btn { flex: 1; max-width: 120px; margin: 0 auto; }
 
-/* Safari Fix */
+/* === Safari / iOS Fix === */
 @supports (-webkit-touch-callout: none) {
-  .slider video {
-    max-width: 340px !important;
-    height: auto !important;
-    object-fit: contain !important;
-  }
+  .slides video { object-fit: contain !important; }
 }
 html, body { height: 100%; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 </style>
@@ -135,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
       allProfiles = profiles;
       renderProfiles(profiles);
       showProfile(activeIndex);
+      sendHeightToParent();
     });
 
   function renderProfiles(profiles) {
@@ -148,16 +136,15 @@ document.addEventListener('DOMContentLoaded', function() {
       const slides = document.createElement('div'); slides.classList.add('slides');
       slider.appendChild(slides);
 
-      // Video arrows
-      const leftArrow = document.createElement('div');
-      leftArrow.classList.add('video-nav', 'left'); leftArrow.textContent = '<';
-      const rightArrow = document.createElement('div');
-      rightArrow.classList.add('video-nav', 'right'); rightArrow.textContent = '>';
-      slider.appendChild(leftArrow); slider.appendChild(rightArrow);
+      // Unmute Button
+      const unmuteBtn = document.createElement('div');
+      unmuteBtn.classList.add('unmute-btn');
+      unmuteBtn.textContent='🔊 Tap to Unmute';
+      slider.appendChild(unmuteBtn);
 
       profileDiv.appendChild(slider);
 
-      // Bio card
+      // Bio Card
       const bio = document.createElement('div'); bio.classList.add('bio-card');
       bio.innerHTML = `
         <div class="bio-name">${profile.Name}</div>
@@ -169,33 +156,35 @@ document.addEventListener('DOMContentLoaded', function() {
       profileDiv.appendChild(bio);
       container.appendChild(profileDiv);
 
-      // Render videos
-      const videoUrls = (profile.VideoIDs || '').split(/[\n,]+/).map(u => u.trim()).filter(u => u);
-      let currentVideo = 0;
-      videoUrls.forEach(url => {
+      // Video Slides
+      const slidesDiv = slider.querySelector('.slides');
+      const videoUrls = (profile.VideoIDs || '').split(/[\n,]+/).map(u=>u.trim()).filter(u=>u);
+      let currentVideoIndex = 0;
+      if(videoUrls.length){
         const videoEl = document.createElement('video');
-        videoEl.src = url;
+        videoEl.src = videoUrls[currentVideoIndex];
         videoEl.autoplay = true;
         videoEl.muted = true;
         videoEl.loop = true;
         videoEl.playsInline = true;
         videoEl.controls = false;
-        videoEl.style.display = 'none';
-        slides.appendChild(videoEl);
-      });
-      if (slides.children.length) slides.children[0].style.display='block';
+        slidesDiv.appendChild(videoEl);
 
-      // Arrow functionality
-      leftArrow.addEventListener('click', () => {
-        slides.children[currentVideo].style.display='none';
-        currentVideo = (currentVideo-1+slides.children.length) % slides.children.length;
-        slides.children[currentVideo].style.display='block';
-      });
-      rightArrow.addEventListener('click', () => {
-        slides.children[currentVideo].style.display='none';
-        currentVideo = (currentVideo+1) % slides.children.length;
-        slides.children[currentVideo].style.display='block';
-      });
+        // Unmute toggle
+        let muted = true;
+        unmuteBtn.addEventListener('click', () => {
+          muted = !muted;
+          videoEl.muted = muted;
+          unmuteBtn.textContent = muted ? '🔊 Tap to Unmute' : '🔇 Tap to Mute';
+        });
+
+        // Cycle videos
+        videoEl.addEventListener('click', () => {
+          currentVideoIndex = (currentVideoIndex + 1) % videoUrls.length;
+          videoEl.src = videoUrls[currentVideoIndex];
+          videoEl.play();
+        });
+      }
     });
   }
 
@@ -203,16 +192,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const profiles = document.querySelectorAll('.profile');
     profiles.forEach(p => p.classList.remove('active'));
     const current = profiles[index];
-    if (!current) return;
+    if(!current) return;
     current.classList.add('active');
 
+    // Count views once
     const profileID = current.dataset.customId;
-    if (profileID && !sessionViews.includes(profileID)) {
+    if(profileID && !sessionViews.includes(profileID)){
       sessionViews.push(profileID);
       sessionStorage.setItem('viewedProfiles', JSON.stringify(sessionViews));
     }
+
+    sendHeightToParent();
   }
 
+  // Navigation buttons
   document.getElementById('prev-btn').addEventListener('click', () => {
     activeIndex = (activeIndex > 0) ? activeIndex - 1 : allProfiles.length - 1;
     showProfile(activeIndex);
@@ -221,5 +214,12 @@ document.addEventListener('DOMContentLoaded', function() {
     activeIndex = (activeIndex < allProfiles.length - 1) ? activeIndex + 1 : 0;
     showProfile(activeIndex);
   });
+
+  // Post height to parent (Gempages)
+  function sendHeightToParent(){
+    const height = document.getElementById('profile-wrapper').offsetHeight;
+    parent.postMessage({type:'setHeight', height: height}, '*');
+  }
+  window.addEventListener('resize', sendHeightToParent);
 });
 </script>
