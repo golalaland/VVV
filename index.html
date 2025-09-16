@@ -1,10 +1,10 @@
-<!-- Profile Carousel Container -->
+<!-- ================== Profiles Carousel with Video Controls ================== -->
 <div id="profile-wrapper">
   <div id="profiles-container"></div>
   <div class="nav-buttons">
-    <button id="prev-btn">Prev</button>
+    <button id="prev-btn">Prev Profile</button>
     <button class="meet-btn">Meet</button>
-    <button id="next-btn">Next</button>
+    <button id="next-btn">Next Profile</button>
   </div>
 </div>
 
@@ -23,109 +23,75 @@
 }
 
 /* === Profile Blocks === */
-.profile {
-  display: none;
-  border-radius: 14px;
-  margin-bottom: 10px;
-}
+.profile { display: none; border-radius: 14px; margin-bottom: 10px; }
 .profile.active { display: block; }
 
 /* === Slider & Video === */
-.slider {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 14px;
-  margin-bottom: 10px;
-}
-.slides {
-  display: flex;
-  transition: transform 0.3s ease;
-}
+.slider { position: relative; width: 100%; overflow: hidden; border-radius: 14px; margin-bottom: 4px; }
+.slides { display: flex; transition: transform 0.3s ease; justify-content: center; }
 .slides video {
   width: 100%;
-  max-width: 360px; /* adjusts size */
+  max-width: 300px;
   margin: 0 auto;
   display: block;
   aspect-ratio: 9/16;
   border-radius: 14px;
   background: #000;
-  object-fit: contain; /* safari fix */
-  cursor: pointer; /* shows clickable for cycling */
+  object-fit: contain;
 }
+
+/* Video Navigation */
+.video-nav { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
+.video-nav button {
+  padding: 4px 12px;
+  border-radius: 600px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+}
+.video-nav button:hover { background: #eee; }
 
 /* === Bio Cards === */
-.bio-card {
-  background: #000;
-  color: #fff;
-  border-radius: 14px;
-  padding: 12px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-  margin-bottom: 10px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
+.bio-card { background: #000; color: #fff; border-radius: 14px; padding: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); margin-bottom: 10px; opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .profile.active .bio-card { opacity: 1; transform: translateY(0); }
-
 .bio-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
 .bio-info { font-size: 14px; line-height: 1.4; color: #aaa; margin-bottom: 2px; }
 .bio-info span { font-weight: 600; color: #fff; }
 .fruit-pick { font-size: 21px; font-weight: 700; margin: 6px 0; }
 
 /* === Nav Buttons === */
-.nav-buttons {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  gap: 10px;
-}
-.nav-buttons button, .meet-btn {
-  padding: 6px 18px;
-  border-radius: 800px;
-  font-weight: 900;
-  font-size: 13px;
-  cursor: pointer;
-  border: none;
-  background: #DFF41F;
-  color: #000;
-  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
-  flex: 1;
-}
-.nav-buttons button:hover, .meet-btn:hover {
-  transform: scale(1.08);
-  background: #c8db1c;
-  box-shadow: 0 4px 12px rgba(223, 244, 31, 0.6);
-}
+.nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 10px; }
+.nav-buttons button, .meet-btn { padding: 6px 18px; border-radius: 800px; font-weight: 900; font-size: 13px; cursor: pointer; border: none; background: #DFF41F; color: #000; transition: background 0.3s, transform 0.2s, box-shadow 0.3s; flex: 1; }
+.nav-buttons button:hover, .meet-btn:hover { transform: scale(1.08); background: #c8db1c; box-shadow: 0 4px 12px rgba(223, 244, 31, 0.6); }
 .meet-btn { flex: 1; max-width: 120px; margin: 0 auto; }
 
-/* === Safari-Specific Fixes === */
-@supports (-webkit-touch-callout: none) {
-  .slides video { max-width: 340px !important; height: auto !important; object-fit: contain !important; }
-}
+/* === Safari / iOS Fix === */
+@supports (-webkit-touch-callout: none) { .slides video { object-fit: contain !important; } }
 html, body { height: 100%; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const container = document.getElementById('profiles-container');
-  const API_KEY = '7dli8bleg4bq8';
   let allProfiles = [];
   let activeIndex = 0;
+  const API_KEY = '7dli8bleg4bq8';
   let sessionViews = JSON.parse(sessionStorage.getItem('viewedProfiles') || '[]');
 
-  // Fetch all profiles
   fetch(`https://sheetdb.io/api/v1/${API_KEY}?limit=50`)
     .then(res => res.json())
     .then(profiles => {
       allProfiles = profiles;
       renderProfiles(profiles);
       showProfile(activeIndex);
+      sendHeightToParent();
     });
 
-  function renderProfiles(profiles) {
-    profiles.forEach(profile => {
+  function renderProfiles(profiles){
+    profiles.forEach(profile=>{
       const profileDiv = document.createElement('div');
       profileDiv.classList.add('profile');
       profileDiv.dataset.customId = profile.CustomID;
@@ -134,10 +100,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const slider = document.createElement('div'); slider.classList.add('slider');
       const slides = document.createElement('div'); slides.classList.add('slides');
       slider.appendChild(slides);
-
       profileDiv.appendChild(slider);
 
-      // Bio card
+      // Bio Card
       const bio = document.createElement('div'); bio.classList.add('bio-card');
       bio.innerHTML = `
         <div class="bio-name">${profile.Name}</div>
@@ -149,27 +114,51 @@ document.addEventListener('DOMContentLoaded', function() {
       profileDiv.appendChild(bio);
       container.appendChild(profileDiv);
 
-      // Render videos for this profile
-      const videos = (profile.VideoIDs||'').split(/[\n,]+/).filter(v=>v.trim()!=='');
+      // Video Slides
+      const slidesDiv = slider.querySelector('.slides');
+      const videoUrls = (profile.VideoIDs||'').split(/[\n,]+/).map(u=>u.trim()).filter(u=>u);
       let currentVideoIndex = 0;
-
-      if(videos.length>0){
+      if(videoUrls.length){
         const videoEl = document.createElement('video');
-        videoEl.src = videos[currentVideoIndex];
+        videoEl.src = videoUrls[currentVideoIndex];
         videoEl.autoplay = true;
         videoEl.muted = true;
         videoEl.loop = true;
         videoEl.playsInline = true;
         videoEl.controls = false;
-        videoEl.style.display = "block";
-        slides.appendChild(videoEl);
+        slidesDiv.appendChild(videoEl);
 
-        // Allow user to click to cycle through videos
-        videoEl.addEventListener('click', ()=>{
-          currentVideoIndex = (currentVideoIndex + 1) % videos.length;
-          videoEl.src = videos[currentVideoIndex];
-          videoEl.play();
+        // Unmute toggle
+        let muted = true;
+        const unmuteBtn = document.createElement('div');
+        unmuteBtn.classList.add('unmute-btn');
+        unmuteBtn.textContent = '🔊 Tap to Unmute';
+        slider.appendChild(unmuteBtn);
+        unmuteBtn.addEventListener('click', ()=>{
+          muted = !muted;
+          videoEl.muted = muted;
+          unmuteBtn.textContent = muted?'🔊 Tap to Unmute':'🔇 Tap to Mute';
         });
+
+        // Video navigation buttons
+        if(videoUrls.length > 1){
+          const videoNav = document.createElement('div'); videoNav.classList.add('video-nav');
+          const prevBtn = document.createElement('button'); prevBtn.textContent = 'Prev Video';
+          const nextBtn = document.createElement('button'); nextBtn.textContent = 'Next Video';
+          videoNav.appendChild(prevBtn); videoNav.appendChild(nextBtn);
+          profileDiv.appendChild(videoNav);
+
+          prevBtn.addEventListener('click', ()=>{
+            currentVideoIndex = (currentVideoIndex-1+videoUrls.length)%videoUrls.length;
+            videoEl.src = videoUrls[currentVideoIndex];
+            videoEl.play();
+          });
+          nextBtn.addEventListener('click', ()=>{
+            currentVideoIndex = (currentVideoIndex+1)%videoUrls.length;
+            videoEl.src = videoUrls[currentVideoIndex];
+            videoEl.play();
+          });
+        }
       }
     });
   }
@@ -186,9 +175,11 @@ document.addEventListener('DOMContentLoaded', function() {
       sessionViews.push(profileID);
       sessionStorage.setItem('viewedProfiles', JSON.stringify(sessionViews));
     }
+
+    sendHeightToParent();
   }
 
-  // Navigation buttons
+  // Main Profile Navigation
   document.getElementById('prev-btn').addEventListener('click', ()=>{
     activeIndex = (activeIndex>0)?activeIndex-1:allProfiles.length-1;
     showProfile(activeIndex);
@@ -197,5 +188,12 @@ document.addEventListener('DOMContentLoaded', function() {
     activeIndex = (activeIndex<allProfiles.length-1)?activeIndex+1:0;
     showProfile(activeIndex);
   });
+
+  // Send iframe height to parent
+  function sendHeightToParent(){
+    const height = document.getElementById('profile-wrapper').offsetHeight;
+    parent.postMessage({type:'setHeight', height: height}, '*');
+  }
+  window.addEventListener('resize', sendHeightToParent);
 });
 </script>
