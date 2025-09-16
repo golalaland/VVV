@@ -1,209 +1,201 @@
-<!-- Profiles Carousel Container -->
-<div id="profile-wrapper">
-  <div id="profiles-container"></div>
-  <div class="nav-buttons">
-    <button id="prev-btn">Prev</button>
-    <button class="meet-btn">Meet</button>
-    <button id="next-btn">Next</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Profiles Carousel</title>
+  <style>
+    /* === Wrapper === */
+    #profile-wrapper {
+      text-align: center;
+      max-width: 360px;
+      width: 95%;
+      margin: 0 auto;
+      background: #000;
+      padding: 10px;
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* === Profile Blocks === */
+    .profile { display: none; margin-bottom: 12px; }
+    .profile.active { display: block; }
+
+    /* === Slider & Video === */
+    .slider {
+      position: relative;
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .slider video {
+      display: block;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
+      border-radius: 14px;
+      background: #000;
+      aspect-ratio: 9 / 16;
+      object-fit: contain; /* keeps whole video visible */
+    }
+
+    /* Safari-specific tweaks */
+    @supports (-webkit-touch-callout: none) {
+      .slider video {
+        max-width: 300px !important;
+        height: auto !important;
+        object-fit: contain !important;
+      }
+    }
+
+    /* === Bio Card === */
+    .bio-card {
+      background: #000;
+      color: #fff;
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      margin-bottom: 8px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .profile.active .bio-card {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .bio-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .bio-info { font-size: 14px; color: #aaa; margin-bottom: 4px; }
+    .bio-info span { font-weight: 600; color: #fff; }
+    .fruit-pick { font-size: 18px; font-weight: 700; margin-top: 6px; }
+
+    /* === Nav Buttons === */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      gap: 10px;
+    }
+    .nav-buttons button, .meet-btn {
+      padding: 6px 18px;
+      border-radius: 800px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      background: #DFF41F;
+      color: #000;
+      transition: all 0.3s ease;
+      flex: 1;
+    }
+    .nav-buttons button:hover, .meet-btn:hover {
+      transform: scale(1.08);
+      background: #c8db1c;
+      box-shadow: 0 4px 12px rgba(223, 244, 31, 0.6);
+    }
+    .meet-btn { flex: 1; max-width: 120px; margin: 0 auto; }
+
+    /* === Full Height Fix === */
+    html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
+  </style>
+</head>
+<body>
+  <div id="profile-wrapper">
+    <div id="profiles-container"></div>
+    <div class="nav-buttons">
+      <button id="prev-btn">Prev</button>
+      <button class="meet-btn">Meet</button>
+      <button id="next-btn">Next</button>
+    </div>
   </div>
-</div>
 
-<style>
-/* === Wrapper & Layout === */
-#profile-wrapper {
-  text-align: center;
-  max-width: 380px;
-  width: 95%;
-  margin: 0 auto;
-  background: #000;
-  padding: 10px;
-  border-radius: 14px;
-  color: #fff;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const container = document.getElementById("profiles-container");
+      let allProfiles = [];
+      let activeIndex = 0;
+      const API_KEY = "7dli8bleg4bq8";
 
-/* === Profile Blocks === */
-.profile { display: none; border-radius: 14px; margin-bottom: 10px; }
-.profile.active { display: block; }
+      fetch(`https://sheetdb.io/api/v1/${API_KEY}?limit=50`)
+        .then((res) => res.json())
+        .then((profiles) => {
+          allProfiles = profiles;
+          renderProfiles(allProfiles);
+          showProfile(activeIndex);
+          sendHeight(); // adjust iframe height
+        });
 
-/* === Slider & Video === */
-.slider { position: relative; width: 100%; overflow: hidden; border-radius: 14px; margin-bottom: 4px; }
-.slider video {
-  width: 100%;
-  max-width: 320px; /* adjust smaller/larger */
-  margin: 0 auto;
-  display: block;
-  aspect-ratio: 9/16;
-  border-radius: 14px;
-  background: #000;
-  object-fit: contain; /* Safari fix */
-}
+      function renderProfiles(profiles) {
+        profiles.forEach((profile) => {
+          const profileDiv = document.createElement("div");
+          profileDiv.classList.add("profile");
 
-/* === Unmute Button === */
-.unmute-btn {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  cursor: pointer;
-  z-index: 5;
-  transition: opacity 0.6s ease;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.05); }
-}
+          // Slider + video
+          const slider = document.createElement("div");
+          slider.classList.add("slider");
 
-/* === Bio Cards === */
-.bio-card {
-  background: #000;
-  color: #fff;
-  border-radius: 14px;
-  padding: 12px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-  margin-bottom: 10px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.profile.active .bio-card { opacity: 1; transform: translateY(0); }
-.bio-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-.bio-info { font-size: 14px; line-height: 1.4; color: #aaa; margin-bottom: 2px; }
-.bio-info span { font-weight: 600; color: #fff; }
-.fruit-pick { font-size: 21px; font-weight: 700; margin: 6px 0; }
+          (profile.VideoIDs || "")
+            .split(/[\n,]+/)
+            .forEach((url) => {
+              url = url.trim();
+              if (!url) return;
+              const videoEl = document.createElement("video");
+              videoEl.src = url;
+              videoEl.autoplay = true;
+              videoEl.muted = true;
+              videoEl.loop = true;
+              videoEl.playsInline = true;
+              videoEl.controls = false;
+              slider.appendChild(videoEl);
+            });
 
-/* === Nav Buttons === */
-.nav-buttons {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  gap: 10px;
-}
-.nav-buttons button, .meet-btn {
-  padding: 6px 18px;
-  border-radius: 800px;
-  font-weight: 900;
-  font-size: 13px;
-  cursor: pointer;
-  border: none;
-  background: #DFF41F;
-  color: #000;
-  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
-  flex: 1;
-}
-.nav-buttons button:hover, .meet-btn:hover {
-  transform: scale(1.08);
-  background: #c8db1c;
-  box-shadow: 0 4px 12px rgba(223, 244, 31, 0.6);
-}
-.meet-btn { flex: 1; max-width: 120px; margin: 0 auto; }
+          profileDiv.appendChild(slider);
 
-/* Safari-specific */
-@supports (-webkit-touch-callout: none) {
-  .slider video { max-width: 320px !important; object-fit: contain !important; }
-}
-html, body { height: 100%; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-</style>
+          // Bio card
+          const bio = document.createElement("div");
+          bio.classList.add("bio-card");
+          bio.innerHTML = `
+            <div class="bio-name">${profile.Name || ""}</div>
+            <div class="bio-info"><span>📍 Location:</span> ${profile.Location || ""}</div>
+            <div class="bio-info"><span>🎂 Age:</span> ${profile.Age || ""}</div>
+            <div class="bio-info"><span>💖 Orientation:</span> ${profile.Orientation || ""}</div>
+            <div class="fruit-pick">${profile.FruitPick || ""}</div>
+          `;
+          profileDiv.appendChild(bio);
+          container.appendChild(profileDiv);
+        });
+      }
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('profiles-container');
-  const API_KEY = '7dli8bleg4bq8';
-  let allProfiles = [];
-  let activeIndex = 0;
+      function showProfile(index) {
+        const profiles = document.querySelectorAll(".profile");
+        profiles.forEach((p) => p.classList.remove("active"));
+        if (profiles[index]) profiles[index].classList.add("active");
+        sendHeight();
+      }
 
-  fetch(`https://sheetdb.io/api/v1/${API_KEY}?limit=50`)
-    .then(res => res.json())
-    .then(profiles => {
-      allProfiles = profiles;
-      renderProfiles(profiles);
-      showProfile(activeIndex);
-    });
-
-  function renderProfiles(profiles) {
-    profiles.forEach(profile => {
-      const profileDiv = document.createElement('div');
-      profileDiv.classList.add('profile');
-      profileDiv.dataset.customId = profile.CustomID;
-
-      // Slider
-      const slider = document.createElement('div'); slider.classList.add('slider');
-      const slides = document.createElement('div'); slides.classList.add('slides');
-      slider.appendChild(slides);
-
-      // Unmute button
-      const unmuteBtn = document.createElement('div');
-      unmuteBtn.classList.add('unmute-btn');
-      unmuteBtn.textContent = '🔊 Tap to Unmute';
-      slider.appendChild(unmuteBtn);
-      profileDiv.appendChild(slider);
-
-      // Bio
-      const bio = document.createElement('div'); bio.classList.add('bio-card');
-      bio.innerHTML = `
-        <div class="bio-name">${profile.Name}</div>
-        <div class="bio-info"><span>📍 Location:</span> ${profile.Location}</div>
-        <div class="bio-info"><span>🎂 Age:</span> ${profile.Age}</div>
-        <div class="bio-info"><span>💖 Orientation:</span> ${profile.Orientation}</div>
-        <div class="fruit-pick">${profile.FruitPick||''}</div>
-      `;
-      profileDiv.appendChild(bio);
-
-      // Videos
-      const videoURLs = (profile.VideoIDs || '').split(/[\n,]+/).map(v=>v.trim()).filter(Boolean);
-      let currentVideo = 0;
-      const videoEl = document.createElement('video');
-      videoEl.src = videoURLs[currentVideo] || '';
-      videoEl.autoplay = true;
-      videoEl.muted = true;
-      videoEl.loop = true;
-      videoEl.playsInline = true;
-      videoEl.controls = false;
-      slides.appendChild(videoEl);
-
-      // Cycle videos
-      slider.addEventListener('click', () => {
-        if(videoURLs.length <= 1) return;
-        currentVideo = (currentVideo + 1) % videoURLs.length;
-        videoEl.src = videoURLs[currentVideo];
-        videoEl.play();
+      document.getElementById("prev-btn").addEventListener("click", () => {
+        activeIndex = (activeIndex > 0) ? activeIndex - 1 : allProfiles.length - 1;
+        showProfile(activeIndex);
       });
 
-      // Unmute toggle
-      let muted = true;
-      unmuteBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        muted = !muted;
-        videoEl.muted = muted;
-        unmuteBtn.textContent = muted ? '🔊 Tap to Unmute' : '🔇 Tap to Mute';
+      document.getElementById("next-btn").addEventListener("click", () => {
+        activeIndex = (activeIndex < allProfiles.length - 1) ? activeIndex + 1 : 0;
+        showProfile(activeIndex);
       });
 
-      container.appendChild(profileDiv);
+      // Post height to parent (Shopify iframe)
+      function sendHeight() {
+        setTimeout(() => {
+          const height = document.body.scrollHeight;
+          window.parent.postMessage({ type: "setHeight", height }, "*");
+        }, 300);
+      }
+
+      window.addEventListener("resize", sendHeight);
     });
-  }
-
-  function showProfile(index) {
-    const profiles = document.querySelectorAll('.profile');
-    profiles.forEach(p => p.classList.remove('active'));
-    const current = profiles[index];
-    if(!current) return;
-    current.classList.add('active');
-  }
-
-  document.getElementById('prev-btn').addEventListener('click', () => {
-    activeIndex = (activeIndex > 0) ? activeIndex - 1 : allProfiles.length - 1;
-    showProfile(activeIndex);
-  });
-  document.getElementById('next-btn').addEventListener('click', () => {
-    activeIndex = (activeIndex < allProfiles.length - 1) ? activeIndex + 1 : 0;
-    showProfile(activeIndex);
-  });
-});
-</script>
+  </script>
+</body>
+</html>
